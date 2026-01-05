@@ -1,0 +1,190 @@
+<div class="fechamento-container">
+  <header class="header">
+    <h1>💰 Fechamento de Caixa</h1>
+    <button class="btn-secondary" (click)="irParaRelatorios()">
+      📊 Ver Relatórios
+    </button>
+  </header>
+
+  @if (mensagemSucesso()) {
+    <div class="mensagem-sucesso">
+      {{ mensagemSucesso() }}
+    </div>
+  }
+
+  <!-- Seleção de Data -->
+  <section class="card card-data">
+    <div class="campo-data">
+      <label for="dataFechamento">
+        📅 Data do Fechamento
+        <span class="data-info">(Selecione a data que está fechando o caixa)</span>
+      </label>
+      <input
+        id="dataFechamento"
+        type="date"
+        [value]="dataFechamento()"
+        (change)="dataFechamento.set($any($event.target).value)"
+        class="input-data-fechamento"
+        [max]="obterDataHoje()"
+      />
+    </div>
+  </section>
+
+  <div class="content-grid">
+    <!-- Seção de Contagem de Dinheiro -->
+    <section class="card card-dinheiro">
+      <h2>💵 Contagem de Dinheiro</h2>
+      
+      <!-- Moedas -->
+      <div class="subsecao">
+        <h3>🪙 Moedas</h3>
+        <div class="denominacoes-grid">
+          @for (item of denominacoes(); track item.valor; let i = $index) {
+            @if (item.tipo === 'moeda') {
+              <div class="denominacao-item">
+                <label class="denominacao-label">
+                  {{ formatarMoeda(item.valor) }}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  [value]="item.quantidade"
+                  (input)="atualizarQuantidade(i, +$any($event.target).value)"
+                  class="input-quantidade"
+                  placeholder="Qtd"
+                />
+                <span class="subtotal">
+                  {{ formatarMoeda(calcularSubtotal(item)) }}
+                </span>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Cédulas -->
+      <div class="subsecao">
+        <h3>💵 Cédulas</h3>
+        <div class="denominacoes-grid">
+          @for (item of denominacoes(); track item.valor; let i = $index) {
+            @if (item.tipo === 'cedula') {
+              <div class="denominacao-item">
+                <label class="denominacao-label">
+                  {{ formatarMoeda(item.valor) }}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  [value]="item.quantidade"
+                  (input)="atualizarQuantidade(i, +$any($event.target).value)"
+                  class="input-quantidade"
+                  placeholder="Qtd"
+                />
+                <span class="subtotal">
+                  {{ formatarMoeda(calcularSubtotal(item)) }}
+                </span>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <div class="total-dinheiro">
+        <span>Total em Dinheiro:</span>
+        <strong>{{ formatarMoeda(totalDinheiro()) }}</strong>
+      </div>
+    </section>
+
+    <!-- Seção de Outras Formas de Pagamento -->
+    <section class="card card-pagamentos">
+      <h2>💳 Outras Formas de Pagamento</h2>
+
+      <div class="campo-pagamento">
+        <label for="cartao">💳 Cartão de Crédito/Débito</label>
+        <input
+          id="cartao"
+          type="number"
+          min="0"
+          step="0.01"
+          [value]="totalCartao()"
+          (input)="totalCartao.set(+$any($event.target).value || 0)"
+          class="input-valor"
+          placeholder="R$ 0,00"
+        />
+      </div>
+
+      <div class="campo-pagamento">
+        <label for="pix">📱 PIX</label>
+        <input
+          id="pix"
+          type="number"
+          min="0"
+          step="0.01"
+          [value]="totalPix()"
+          (input)="totalPix.set(+$any($event.target).value || 0)"
+          class="input-valor"
+          placeholder="R$ 0,00"
+        />
+      </div>
+
+      <div class="campo-pagamento">
+        <label for="sangria">💸 Sangria (Despesas)</label>
+        <input
+          id="sangria"
+          type="number"
+          min="0"
+          step="0.01"
+          [value]="sangria()"
+          (input)="sangria.set(+$any($event.target).value || 0)"
+          class="input-valor"
+          placeholder="R$ 0,00"
+        />
+      </div>
+
+      <div class="resumo-pagamentos">
+        <div class="resumo-item">
+          <span>💵 Dinheiro:</span>
+          <span>{{ formatarMoeda(totalDinheiro()) }}</span>
+        </div>
+        <div class="resumo-item">
+          <span>💳 Cartão:</span>
+          <span>{{ formatarMoeda(totalCartao()) }}</span>
+        </div>
+        <div class="resumo-item">
+          <span>📱 PIX:</span>
+          <span>{{ formatarMoeda(totalPix()) }}</span>
+        </div>
+        <div class="resumo-item sangria-item">
+          <span>💸 Sangria:</span>
+          <span>- {{ formatarMoeda(sangria()) }}</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Total Geral Destacado -->
+  <div class="total-geral-card">
+    <div class="total-geral-content">
+      <span class="total-geral-label">TOTAL GERAL</span>
+      <span class="total-geral-valor">{{ formatarMoeda(totalGeral()) }}</span>
+    </div>
+  </div>
+
+  <!-- Botões de Ação -->
+  <div class="acoes">
+    <button 
+      class="btn-primary btn-fechar" 
+      (click)="fecharCaixa()"
+      [disabled]="salvando()"
+    >
+      @if (salvando()) {
+        ⏳ Salvando...
+      } @else {
+        ✅ Fechar Caixa
+      }
+    </button>
+    <button class="btn-secondary" (click)="resetarFormulario()">
+      🔄 Limpar
+    </button>
+  </div>
+</div>

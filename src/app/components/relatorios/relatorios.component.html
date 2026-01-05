@@ -1,0 +1,186 @@
+<div class="relatorios-container">
+  <header class="header">
+    <h1>📊 Dashboard Analítico</h1>
+    <button class="btn-secondary" (click)="irParaFechamento()">
+      ← Voltar ao Fechamento
+    </button>
+  </header>
+
+  <!-- Filtros -->
+  <section class="card filtros-card">
+    <h2>🔍 Filtros de Período</h2>
+    <div class="filtros-grid">
+      <div class="campo-filtro">
+        <label for="dataInicio">Data Início</label>
+        <input
+          id="dataInicio"
+          type="date"
+          [value]="dataInicio()"
+          (change)="dataInicio.set($any($event.target).value)"
+          class="input-data"
+        />
+      </div>
+      <div class="campo-filtro">
+        <label for="dataFim">Data Fim</label>
+        <input
+          id="dataFim"
+          type="date"
+          [value]="dataFim()"
+          (change)="dataFim.set($any($event.target).value)"
+          class="input-data"
+        />
+      </div>
+      <button class="btn-primary btn-filtrar" (click)="filtrarRelatorios()">
+        @if (carregando()) {
+          ⏳ Carregando...
+        } @else {
+          🔍 Filtrar
+        }
+      </button>
+    </div>
+  </section>
+
+  @if (!carregando()) {
+    <!-- KPIs -->
+    <section class="kpis-grid">
+      <div class="kpi-card kpi-vendido">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-content">
+          <span class="kpi-label">Total Vendido</span>
+          <span class="kpi-valor">{{ formatarMoeda(kpis().totalVendido) }}</span>
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-ticket">
+        <div class="kpi-icon">🎯</div>
+        <div class="kpi-content">
+          <span class="kpi-label">Ticket Médio</span>
+          <span class="kpi-valor">{{ formatarMoeda(kpis().ticketMedio) }}</span>
+        </div>
+      </div>
+
+      <div class="kpi-card kpi-fechamentos">
+        <div class="kpi-icon">📋</div>
+        <div class="kpi-content">
+          <span class="kpi-label">Fechamentos</span>
+          <span class="kpi-valor">{{ kpis().quantidadeFechamentos }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Divisão por Tipo de Pagamento -->
+    <section class="card pagamentos-card">
+      <h2>💳 Divisão por Tipo de Pagamento</h2>
+      <div class="pagamentos-grid">
+        <div class="pagamento-item">
+          <span class="pagamento-label">💵 Dinheiro</span>
+          <span class="pagamento-valor">{{ formatarMoeda(kpis().totalDinheiro) }}</span>
+          <div class="pagamento-barra">
+            <div 
+              class="pagamento-progresso dinheiro" 
+              [style.width.%]="(kpis().totalDinheiro / kpis().totalVendido * 100) || 0"
+            ></div>
+          </div>
+        </div>
+
+        <div class="pagamento-item">
+          <span class="pagamento-label">💳 Cartão</span>
+          <span class="pagamento-valor">{{ formatarMoeda(kpis().totalCartao) }}</span>
+          <div class="pagamento-barra">
+            <div 
+              class="pagamento-progresso cartao" 
+              [style.width.%]="(kpis().totalCartao / kpis().totalVendido * 100) || 0"
+            ></div>
+          </div>
+        </div>
+
+        <div class="pagamento-item">
+          <span class="pagamento-label">📱 PIX</span>
+          <span class="pagamento-valor">{{ formatarMoeda(kpis().totalPix) }}</span>
+          <div class="pagamento-barra">
+            <div 
+              class="pagamento-progresso pix" 
+              [style.width.%]="(kpis().totalPix / kpis().totalVendido * 100) || 0"
+            ></div>
+          </div>
+        </div>
+
+        <div class="pagamento-item sangria">
+          <span class="pagamento-label">💸 Sangria</span>
+          <span class="pagamento-valor">{{ formatarMoeda(kpis().totalSangria) }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gráfico -->
+    <section class="card grafico-card">
+      <h2>📈 Evolução do Faturamento</h2>
+      <div class="grafico-container">
+        @if (chartData().labels && chartData().labels!.length > 0) {
+          <canvas baseChart
+            [data]="chartData()"
+            [options]="chartOptions"
+            type="line"
+          ></canvas>
+        } @else {
+          <div class="sem-dados">
+            <p>📊 Nenhum dado encontrado no período selecionado</p>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Tabela de Fechamentos -->
+    <section class="card tabela-card">
+      <div class="tabela-header">
+        <h2>📋 Listagem de Fechamentos</h2>
+        <div class="botoes-exportacao">
+          <button class="btn-excel" (click)="exportarExcel()">
+            📗 Exportar Excel
+          </button>
+          <button class="btn-pdf" (click)="exportarPDF()">
+            📕 Exportar PDF
+          </button>
+        </div>
+      </div>
+
+      @if (fechamentos().length > 0) {
+        <div class="tabela-wrapper">
+          <table class="tabela-fechamentos">
+            <thead>
+              <tr>
+                <th>Data/Hora</th>
+                <th>Dinheiro</th>
+                <th>Cartão</th>
+                <th>PIX</th>
+                <th>Sangria</th>
+                <th>Total Geral</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (fechamento of fechamentos(); track fechamento.id) {
+                <tr>
+                  <td>{{ formatarData(fechamento.data) }}</td>
+                  <td>{{ formatarMoeda(fechamento.totalDinheiro) }}</td>
+                  <td>{{ formatarMoeda(fechamento.totalCartao) }}</td>
+                  <td>{{ formatarMoeda(fechamento.totalPix) }}</td>
+                  <td class="sangria-valor">{{ formatarMoeda(fechamento.sangria) }}</td>
+                  <td class="total-valor">{{ formatarMoeda(fechamento.totalGeral) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="sem-dados">
+          <p>📋 Nenhum fechamento encontrado no período selecionado</p>
+        </div>
+      }
+    </section>
+  } @else {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Carregando dados...</p>
+    </div>
+  }
+</div>
